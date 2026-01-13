@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 # === 🎨 Configuración de la página ===
 st.set_page_config(
@@ -151,12 +152,20 @@ def cargar_analisis_repuestos():
     
     return df_stock[df_stock['deficit'] > 0].sort_values('deficit', ascending=False)
 
-# === 🖥️ Interfaz principal ===
+# === 📥 Función para crear archivo Excel en memoria ===
+def to_excel(df_dict):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        for sheet_name, df in df_dict.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    return output.getvalue()
+
+# === 🖥️ Interfaz principal con menú en el header ===
 st.title("🏥 Dashboard de Gestión Técnica")
 
-vista = st.sidebar.radio("Seleccionar vista", ["📊 Indicadores de Equipos", "📦 Análisis de Repuestos"])
+tab_equipos, tab_repuestos = st.tabs(["📊 Indicadores de Equipos", "📦 Análisis de Repuestos"])
 
-if vista == "📊 Indicadores de Equipos":
+with tab_equipos:
     st.markdown("### Equipos médicos - Indicadores de confiabilidad y alertas")
     
     df = cargar_y_procesar_datos()
@@ -206,14 +215,16 @@ if vista == "📊 Indicadores de Equipos":
 
     st.dataframe(df_display.style.applymap(resaltar_prioridad, subset=['Prioridad']))
 
+    # Descarga en Excel
+    excel_data = to_excel({"Indicadores_Equipos": df_display})
     st.download_button(
-        label="📥 Descargar datos (CSV)",
-        data=df_display.to_csv(index=False).encode('utf-8'),
-        file_name="indicadores_tecnicos.csv",
-        mime="text/csv"
+        label="📥 Descargar datos (Excel)",
+        data=excel_data,
+        file_name="indicadores_tecnicos.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-else:  # Vista de repuestos
+with tab_repuestos:
     st.markdown("### 📦 Análisis de Repuestos Críticos")
     st.caption("Basado en política de stock, compatibilidad y equipos instalados")
     
@@ -222,7 +233,6 @@ else:  # Vista de repuestos
     if df_repuestos.empty:
         st.success("✅ Todos los repuestos cumplen con la política de stock.")
     else:
-        # Filtros
         col1, col2 = st.columns(2)
         with col1:
             tipos = st.multiselect(
@@ -244,7 +254,6 @@ else:  # Vista de repuestos
         
         st.metric("Repuestos críticos", len(df_filtrado))
         
-        # Gráfico: Top 10 por déficit
         top10 = df_filtrado.nlargest(10, 'deficit')
         if not top10.empty:
             st.subheader("🔝 Top 10 Repuestos por Déficit")
@@ -259,7 +268,6 @@ else:  # Vista de repuestos
             plt.tight_layout()
             st.pyplot(fig)
         
-        # Tabla detallada
         columnas_mostrar = [
             'id_repuesto', 'descripcion', 'tipo_repuesto', 'criticidad',
             'stock_actual', 'stock_minimo_total', 'deficit', 'modelos_asociados'
@@ -276,11 +284,13 @@ else:  # Vista de repuestos
         
         st.dataframe(df_display)
         
+        # Descarga en Excel
+        excel_data = to_excel({"Lista_Compra_Repuestos": df_display})
         st.download_button(
-            label="📥 Descargar lista de compra (CSV)",
-            data=df_display.to_csv(index=False).encode('utf-8'),
-            file_name="lista_compra_repuestos.csv",
-            mime="text/csv"
+            label="📥 Descargar lista de compra (Excel)",
+            data=excel_data,
+            file_name="lista_compra_repuestos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
 st.markdown("---")
