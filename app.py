@@ -7,6 +7,20 @@ import os
 import matplotlib.pyplot as plt
 from io import BytesIO
 
+# === 🖼️ Metaetiquetas para vista previa en redes sociales (WhatsApp, LinkedIn, etc.) ===
+# URLs reales de tu proyecto
+preview_image_url = "https://raw.githubusercontent.com/lfdomc/Repuestos-APP-PYTHON/main/preview.png"
+app_url = "https://repuestos-app-python-p96bvhkf58pm9yuujw5rha.streamlit.app/"
+
+st.markdown(f"""
+    <meta property="og:title" content="🏥 Dashboard de Gestión Técnica - Laboratorio">
+    <meta property="og:description" content="Indicadores de confiabilidad de equipos médicos y análisis inteligente de repuestos críticos.">
+    <meta property="og:image" content="{preview_image_url}">
+    <meta property="og:url" content="{app_url}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+""", unsafe_allow_html=True)
+
 # === 🎨 Configuración de la página ===
 st.set_page_config(
     page_title="📊 Indicadores Técnicos - Laboratorio",
